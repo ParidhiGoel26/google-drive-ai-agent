@@ -149,7 +149,7 @@ if user_input and user_input.strip():
     # BACKEND REQUEST
     # =========================
 
-    BACKEND_URL = "YOUR_RENDER_BACKEND_URL/chat"
+    BACKEND_URL = "https://google-drive-ai-agent-47b2.onrender.com/chat"
 
     with st.spinner("🔍 Searching files..."):
 
