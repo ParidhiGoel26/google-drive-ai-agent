@@ -13,12 +13,51 @@ class GoogleDriveService:
 
     def search_files(self, folder_id, query):
 
-        final_query = f"'{folder_id}' in parents and {query}"
+        query = query.lower()
+
+        mime_query = "trashed=false"
+
+        # PDFs
+        if "pdf" in query:
+            mime_query += " and mimeType='application/pdf'"
+
+        # Videos
+        elif "video" in query:
+            mime_query += " and mimeType contains 'video/'"
+
+        # Images
+        elif "image" in query:
+            mime_query += " and mimeType contains 'image/'"
+
+        # Excel files
+        elif "excel" in query or "sheet" in query:
+            mime_query += (
+                " and mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'"
+            )
+
+        # Folders
+        elif "folder" in query:
+            mime_query += (
+                " and mimeType='application/vnd.google-apps.folder'"
+            )
+
+        final_query = f"'{folder_id}' in parents and {mime_query}"
 
         results = self.service.files().list(
             q=final_query,
-            pageSize=10,
+            pageSize=20,
             fields="files(id,name,mimeType,modifiedTime,webViewLink)"
         ).execute()
 
-        return results.get('files', [])
+        files = results.get('files', [])
+
+        formatted_files = []
+
+        for file in files:
+
+            formatted_files.append({
+                "name": file["name"],
+                "url": file["webViewLink"]
+            })
+
+        return formatted_files
