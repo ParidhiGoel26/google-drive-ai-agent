@@ -73,8 +73,9 @@ html, body, [class*="css"] {
 /* File links */
 .file-link {
     font-size: 18px;
-    margin-bottom: 14px;
-    line-height: 1.8;
+    margin-bottom: 10px;
+    line-height: 1.7;
+    word-wrap: break-word;
 }
 
 /* Footer */
@@ -177,30 +178,38 @@ for message in st.session_state.messages:
         """, unsafe_allow_html=True)
 
     # ASSISTANT MESSAGE
-    else:
+    elif message["role"] == "assistant":
 
         st.markdown("""
         <div class="chat-box">
             <div class="bot-msg">🤖 I found these files:</div>
         """, unsafe_allow_html=True)
 
-        for file in message["files"]:
+        files = message.get("files", [])
+
+        for file in files:
 
             icon = "📄"
 
-            if file["name"].lower().endswith(".mp4"):
+            filename = file.get("name", "Unknown File")
+            fileurl = file.get("url", "#")
+
+            if filename.lower().endswith(".mp4"):
                 icon = "🎥"
 
-            elif file["name"].lower().endswith(".xlsx"):
+            elif filename.lower().endswith(".xlsx"):
                 icon = "📊"
 
-            elif file["name"].lower().endswith(".png"):
+            elif filename.lower().endswith(".png"):
                 icon = "🖼"
 
             st.markdown(
                 f"""
                 <div class="file-link">
-                    {icon} <a href="{file['url']}" target="_blank">{file['name']}</a>
+                    {icon}
+                    <a href="{fileurl}" target="_blank">
+                        {filename}
+                    </a>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -218,23 +227,23 @@ query = st.chat_input("Ask about your files...")
 # =========================================
 if query:
 
-    # Save search history
+    # SAVE SEARCH HISTORY
     st.session_state.history.append(query)
 
-    # USER MESSAGE
+    # SAVE USER MESSAGE
     st.session_state.messages.append({
         "role": "user",
         "content": query
     })
 
-    # Display user message instantly
+    # SHOW USER MESSAGE
     st.markdown(f"""
     <div class="chat-box">
         <div class="user-msg">🔴 {query}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # LOADING SPINNER
+    # LOADING
     with st.spinner("Searching Google Drive..."):
 
         time.sleep(1)
@@ -254,6 +263,7 @@ if query:
 
             files = data.get("files", [])
 
+            # IF FILES FOUND
             if files:
 
                 st.session_state.messages.append({
@@ -270,21 +280,24 @@ if query:
 
                     icon = "📄"
 
-                    if file["name"].lower().endswith(".mp4"):
+                    filename = file.get("name", "Unknown File")
+                    fileurl = file.get("url", "#")
+
+                    if filename.lower().endswith(".mp4"):
                         icon = "🎥"
 
-                    elif file["name"].lower().endswith(".xlsx"):
+                    elif filename.lower().endswith(".xlsx"):
                         icon = "📊"
 
-                    elif file["name"].lower().endswith(".png"):
+                    elif filename.lower().endswith(".png"):
                         icon = "🖼"
 
                     st.markdown(
                         f"""
                         <div class="file-link">
-                            {icon} 
-                            <a href="{file['url']}" target="_blank">
-                                {file['name']}
+                            {icon}
+                            <a href="{fileurl}" target="_blank">
+                                {filename}
                             </a>
                         </div>
                         """,
@@ -293,6 +306,7 @@ if query:
 
                 st.markdown("</div>", unsafe_allow_html=True)
 
+            # NO FILES
             else:
 
                 st.markdown("""
