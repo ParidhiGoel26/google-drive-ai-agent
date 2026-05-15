@@ -2,245 +2,319 @@ import streamlit as st
 import requests
 import time
 
-# =========================
+# =========================================
 # PAGE CONFIG
-# =========================
+# =========================================
 st.set_page_config(
     page_title="Google Drive AI Agent",
     page_icon="📁",
     layout="wide"
 )
 
-# =========================
+# =========================================
 # CUSTOM CSS
-# =========================
+# =========================================
 st.markdown("""
 <style>
-.main {
+
+html, body, [class*="css"] {
     background-color: #0E1117;
     color: white;
+    font-family: 'Segoe UI', sans-serif;
 }
 
-.stChatMessage {
-    border-radius: 12px;
-    padding: 10px;
-    font-size: 16px;
-}
-
-.stChatMessage a {
-    font-size: 18px !important;
-    word-break: break-word;
-}
-
-.stMarkdown {
-    font-size: 16px;
-}
-
-.stTextInput>div>div>input {
-    background-color: #262730;
+/* Main title */
+.main-title {
+    font-size: 54px;
+    font-weight: 700;
     color: white;
+    margin-bottom: 0;
 }
 
-.big-title {
-    font-size: 48px;
-    font-weight: bold;
-    color: white;
-}
-
+/* Subtitle */
 .subtitle {
-    color: #BBBBBB;
-    font-size: 18px;
+    font-size: 22px;
+    color: #B0B3B8;
+    margin-top: -10px;
+    margin-bottom: 20px;
 }
 
+/* Search examples */
+.search-examples {
+    color: #8B949E;
+    font-size: 16px;
+    margin-bottom: 30px;
+}
+
+/* Chat box */
+.chat-box {
+    background-color: #161B22;
+    padding: 18px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+    border: 1px solid #30363D;
+}
+
+/* User message */
+.user-msg {
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+}
+
+/* Bot message */
+.bot-msg {
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 15px;
+}
+
+/* File links */
+.file-link {
+    font-size: 18px;
+    margin-bottom: 14px;
+    line-height: 1.8;
+}
+
+/* Footer */
 .footer {
     text-align: center;
-    color: gray;
-    margin-top: 50px;
-    font-size: 14px;
+    color: #8B949E;
+    padding-top: 40px;
+    padding-bottom: 10px;
+    font-size: 15px;
 }
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background-color: #161B22;
+}
+
+/* Spinner */
+.stSpinner > div > div {
+    border-top-color: #4F8BF9 !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
+# =========================================
 # SIDEBAR
-# =========================
+# =========================================
 with st.sidebar:
 
     st.title("Drive Assistant")
 
-    st.markdown("---")
+    st.divider()
 
-    st.info("""
-### Supported searches:
+    st.markdown("""
+    ### Supported searches:
+    
+    - 📄 PDFs  
+    - 🖼 Images  
+    - 🎥 Videos  
+    - 📊 Excel files  
+    - 📁 Folders  
+    - 📑 Reports  
+    """)
 
-• PDFs  
-• Images  
-• Videos  
-• Excel files  
-• Folders  
-• Reports  
-""")
-
-    st.markdown("---")
-
-    st.subheader("Recent Searches")
+    st.divider()
 
     if "history" not in st.session_state:
         st.session_state.history = []
 
-    for item in st.session_state.history[-5:][::-1]:
+    st.markdown("### Recent Searches")
+
+    for item in st.session_state.history[-5:]:
         st.write(f"🔎 {item}")
 
-    st.markdown("---")
+    st.divider()
 
     if st.button("Clear Chat"):
         st.session_state.messages = []
-        st.session_state.history = []
         st.rerun()
 
-# =========================
-# TITLE
-# =========================
-st.markdown(
-    '<div class="big-title">📁 Google Drive AI Agent</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    '<div class="subtitle">Search files using natural language.</div>',
-    unsafe_allow_html=True
-)
-
-st.caption(
-    "Try: PDFs • invoices • videos • reports • excel sheets"
-)
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# =========================
+# =========================================
 # SESSION STATE
-# =========================
+# =========================================
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# =========================
+# =========================================
+# HEADER
+# =========================================
+st.markdown("""
+<div class="main-title">
+📁 Google Drive AI Agent
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="subtitle">
+Search files using natural language.
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="search-examples">
+Try: PDFs • invoices • videos • reports • excel sheets
+</div>
+""", unsafe_allow_html=True)
+
+# =========================================
 # DISPLAY CHAT HISTORY
-# =========================
-for msg in st.session_state.messages:
+# =========================================
+for message in st.session_state.messages:
 
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+    # USER MESSAGE
+    if message["role"] == "user":
 
-# =========================
-# USER INPUT
-# =========================
-user_input = st.chat_input(
-    "Ask about your files..."
-)
+        st.markdown(f"""
+        <div class="chat-box">
+            <div class="user-msg">🔴 {message["content"]}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-# =========================
-# CHAT LOGIC
-# =========================
-if user_input and user_input.strip():
+    # ASSISTANT MESSAGE
+    else:
+
+        st.markdown("""
+        <div class="chat-box">
+            <div class="bot-msg">🤖 I found these files:</div>
+        """, unsafe_allow_html=True)
+
+        for file in message["files"]:
+
+            icon = "📄"
+
+            if file["name"].lower().endswith(".mp4"):
+                icon = "🎥"
+
+            elif file["name"].lower().endswith(".xlsx"):
+                icon = "📊"
+
+            elif file["name"].lower().endswith(".png"):
+                icon = "🖼"
+
+            st.markdown(
+                f"""
+                <div class="file-link">
+                    {icon} <a href="{file['url']}" target="_blank">{file['name']}</a>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+# =========================================
+# CHAT INPUT
+# =========================================
+query = st.chat_input("Ask about your files...")
+
+# =========================================
+# API CALL
+# =========================================
+if query:
 
     # Save search history
-    st.session_state.history.append(user_input)
+    st.session_state.history.append(query)
 
-    # Add user message
+    # USER MESSAGE
     st.session_state.messages.append({
         "role": "user",
-        "content": user_input
+        "content": query
     })
 
-    with st.chat_message("user"):
-        st.markdown(user_input)
+    # Display user message instantly
+    st.markdown(f"""
+    <div class="chat-box">
+        <div class="user-msg">🔴 {query}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # =========================
-    # BACKEND REQUEST
-    # =========================
+    # LOADING SPINNER
+    with st.spinner("Searching Google Drive..."):
 
-    BACKEND_URL = "https://google-drive-ai-agent-47b2.onrender.com/chat"
-
-    with st.spinner("🔍 Searching files..."):
+        time.sleep(1)
 
         try:
 
+            # YOUR RENDER BACKEND URL
+            API_URL = "https://google-drive-ai-agent-47b2.onrender.com/search"
+
             response = requests.post(
-                BACKEND_URL,
-                json={
-                    "message": user_input
-                },
+                API_URL,
+                json={"query": query},
                 timeout=60
             )
 
             data = response.json()
 
-            assistant_response = data.get(
-                "response",
-                "No response received from server."
-            )
+            files = data.get("files", [])
 
-        except Exception:
+            if files:
 
-            assistant_response = (
-                "⚠️ Unable to connect to backend server. "
-                "Please try again later."
-            )
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "files": files
+                })
 
-    # Better no-results message
-    if assistant_response.strip().lower() in [
-        "no matching files found.",
-        "no files found."
-    ]:
+                st.markdown("""
+                <div class="chat-box">
+                    <div class="bot-msg">🤖 I found these files:</div>
+                """, unsafe_allow_html=True)
 
-        assistant_response = (
-            "❌ No matching files found.\n\n"
-            "Try searching by:\n"
-            "- file type\n"
-            "- file name\n"
-            "- keywords\n"
-            "- reports\n"
-            "- videos\n"
-            "- PDFs"
-        )
+                for file in files:
 
-    # Save assistant response
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": assistant_response
-    })
+                    icon = "📄"
 
-    # =========================
-    # TYPING ANIMATION
-    # =========================
-    with st.chat_message("assistant"):
+                    if file["name"].lower().endswith(".mp4"):
+                        icon = "🎥"
 
-        message_placeholder = st.empty()
+                    elif file["name"].lower().endswith(".xlsx"):
+                        icon = "📊"
 
-        full_response = ""
+                    elif file["name"].lower().endswith(".png"):
+                        icon = "🖼"
 
-        for chunk in assistant_response.split():
+                    st.markdown(
+                        f"""
+                        <div class="file-link">
+                            {icon} 
+                            <a href="{file['url']}" target="_blank">
+                                {file['name']}
+                            </a>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
-            full_response += chunk + " "
+                st.markdown("</div>", unsafe_allow_html=True)
 
-            message_placeholder.markdown(
-                full_response + "▌"
-            )
+            else:
 
-            time.sleep(0.02)
+                st.markdown("""
+                <div class="chat-box">
+                    ❌ No matching files found.
+                </div>
+                """, unsafe_allow_html=True)
 
-        message_placeholder.markdown(full_response)
+        except Exception as e:
 
-# =========================
+            st.markdown(f"""
+            <div class="chat-box">
+                ⚠️ Unable to connect to backend server.<br><br>
+                Error: {str(e)}
+            </div>
+            """, unsafe_allow_html=True)
+
+# =========================================
 # FOOTER
-# =========================
-st.markdown("---")
-
-st.markdown(
-    """
-    <div class="footer">
-    Built with ❤️ using Streamlit, FastAPI, LangChain & Google Drive API
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# =========================================
+st.markdown("""
+<div class="footer">
+Built with ❤️ using Streamlit, FastAPI, LangChain & Google Drive API
+</div>
+""", unsafe_allow_html=True)
