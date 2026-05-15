@@ -24,6 +24,16 @@ st.markdown("""
 .stChatMessage {
     border-radius: 12px;
     padding: 10px;
+    font-size: 16px;
+}
+
+.stChatMessage a {
+    font-size: 18px !important;
+    word-break: break-word;
+}
+
+.stMarkdown {
+    font-size: 16px;
 }
 
 .stTextInput>div>div>input {
