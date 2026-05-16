@@ -56,8 +56,11 @@ class GoogleDriveService:
         for file in files:
 
             formatted_files.append({
-                "name": file["name"],
-                "url": file["webViewLink"]
-            })
+    "name": file.get("name", "Unknown File"),
+    "url": file.get(
+        "webViewLink",
+        f"https://drive.google.com/file/d/{file.get('id')}/view"
+    )
+})
 
         return formatted_files
