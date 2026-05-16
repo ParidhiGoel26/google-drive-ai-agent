@@ -24,6 +24,16 @@ st.markdown("""
 .stChatMessage {
     border-radius: 12px;
     padding: 10px;
+    font-size: 16px;
+}
+
+.stChatMessage a {
+    font-size: 18px !important;
+    word-break: break-word;
+}
+
+.stMarkdown {
+    font-size: 16px;
 }
 
 .stTextInput>div>div>input {
@@ -149,7 +159,7 @@ if user_input and user_input.strip():
     # BACKEND REQUEST
     # =========================
 
-    BACKEND_URL = "YOUR_RENDER_BACKEND_URL/chat"
+    BACKEND_URL = "https://google-drive-ai-agent-47b2.onrender.com/chat"
 
     with st.spinner("🔍 Searching files..."):
 
