@@ -178,7 +178,15 @@ if prompt:
 
                 data = response.json()
 
-                files = data.get("files", [])
+                response_text = data.get(
+                    "response",
+                    ""
+                )
+
+                files = data.get(
+                    "results",
+                    []
+                )
 
                 if files:
 
@@ -202,7 +210,7 @@ if prompt:
 
                     st.session_state.messages.append({
                         "role": "assistant",
-                        "content": f"Found {len(files)} file(s).",
+                        "content": response_text,
                         "files": files
                     })
 
