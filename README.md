@@ -157,7 +157,7 @@ streamlit run app.py
 
 ## 📸 Output Screenshot
 
-<img width="100%" alt="project-output" src="https://app-drive-ai-agent-lbkg7qxtavysas7yu5lugu.streamlit.app/" />
+![Project Output](output.png)
 
 ---
 
