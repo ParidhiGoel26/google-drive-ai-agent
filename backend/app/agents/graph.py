@@ -4,7 +4,6 @@ import os
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 
-from app.services.llm_service import llm
 from app.services.auth import authenticate_google
 from app.services.drive_service import GoogleDriveService
 
@@ -23,56 +22,40 @@ class AgentState(TypedDict):
 
 def generate_query(state):
 
-    prompt = f"""
-    You are a Google Drive API query generator.
+    user_input = state["user_input"].lower()
 
-    Convert the user request into ONLY a valid Google Drive API q query.
+    # PDFs
+    if "pdf" in user_input:
+        query = "mimeType='application/pdf'"
 
-    Rules:
-    - Use name contains
-    - Use mimeType
-    - Use fullText contains
-    - Use modifiedTime
-    - Return ONLY query text
+    # Videos
+    elif "video" in user_input:
+        query = "mimeType contains 'video/'"
 
-    Examples:
+    # Images
+    elif "image" in user_input or "photo" in user_input:
+        query = "mimeType contains 'image/'"
 
-    User: Find PDFs
-    Output:
-    mimeType='application/pdf'
+    # Excel files
+    elif "excel" in user_input or "sheet" in user_input:
+        query = (
+            "mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'"
+        )
 
-    User: Find reports
-    Output:
-    name contains 'report'
+    # Folders
+    elif "folder" in user_input:
+        query = "mimeType='application/vnd.google-apps.folder'"
 
-    User: Find invoice documents
-    Output:
-    fullText contains 'invoice'
+    # Reports
+    elif "report" in user_input:
+        query = "name contains 'Report'"
 
-    User: Show images
-    Output:
-    mimeType contains 'image/'
-
-    User: Show videos
-    Output:
-    mimeType contains 'video/'
-
-    User: Show excel files
-    Output:
-    mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-
-    User: Show folders
-    Output:
-    mimeType='application/vnd.google-apps.folder'
-
-    User Request:
-    {state['user_input']}
-    """
-
-    response = llm.invoke(prompt)
+    # Default search
+    else:
+        query = "trashed=false"
 
     return {
-        "search_query": response.content.strip()
+        "search_query": query
     }
 
 
@@ -111,12 +94,16 @@ def generate_response(state):
 
         if "image" in mime:
             icon = "🖼️"
+
         elif "video" in mime:
             icon = "🎥"
+
         elif "spreadsheet" in mime:
             icon = "📊"
+
         elif "folder" in mime:
             icon = "📁"
+
         elif "pdf" in mime:
             icon = "📄"
 
