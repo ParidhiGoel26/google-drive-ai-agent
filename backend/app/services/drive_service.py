@@ -13,14 +13,10 @@ class GoogleDriveService:
 
     def search_files(self, folder_id, query):
 
-        final_query = (
-            f"'{folder_id}' in parents "
-            f"and trashed=false "
-            f"and {query}"
-        )
+        drive_query = f"{query} and trashed=false"
 
         results = self.service.files().list(
-            q=final_query,
+            q=drive_query,
             pageSize=20,
             fields="files(id,name,mimeType,modifiedTime,webViewLink)"
         ).execute()
