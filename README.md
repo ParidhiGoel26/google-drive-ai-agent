@@ -9,6 +9,11 @@ AI-powered Google Drive search assistant built using FastAPI, Streamlit, LangGra
 https://app-drive-ai-agent-lbkg7qxtavysas7yu5lugu.streamlit.app/
 
 ---
+## 📸 Output Screenshot
+
+![Project Output](output.png)
+
+---
 
 ## ✨ Features
 
@@ -155,11 +160,7 @@ streamlit run app.py
 
 ---
 
-## 📸 Output Screenshot
 
-![Project Output](output.png)
-
----
 
 ## 🔍 Example Queries
 
