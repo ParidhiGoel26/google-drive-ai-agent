@@ -25,7 +25,7 @@ html, body, [class*="css"] {
 
 /* Main title */
 .main-title {
-    font-size: 54px;
+    font-size: 52px;
     font-weight: 700;
     color: white;
     margin-bottom: 0;
@@ -51,7 +51,7 @@ html, body, [class*="css"] {
     background-color: #161B22;
     padding: 18px;
     border-radius: 14px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
     border: 1px solid #30363D;
 }
 
@@ -62,18 +62,10 @@ html, body, [class*="css"] {
     color: white;
 }
 
-/* Bot message */
-.bot-msg {
-    font-size: 20px;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 15px;
-}
-
-/* File links */
-.file-link {
+/* Assistant message */
+.assistant-msg {
     font-size: 18px;
-    margin-bottom: 10px;
+    color: #E6EDF3;
     line-height: 1.7;
     word-wrap: break-word;
 }
@@ -84,7 +76,7 @@ html, body, [class*="css"] {
     color: #8B949E;
     padding-top: 40px;
     padding-bottom: 10px;
-    font-size: 15px;
+    font-size: 14px;
 }
 
 /* Sidebar */
@@ -111,7 +103,7 @@ with st.sidebar:
 
     st.markdown("""
     ### Supported searches:
-    
+
     - 📄 PDFs  
     - 🖼 Images  
     - 🎥 Videos  
@@ -134,6 +126,7 @@ with st.sidebar:
 
     if st.button("Clear Chat"):
         st.session_state.messages = []
+        st.session_state.history = []
         st.rerun()
 
 # =========================================
@@ -168,57 +161,25 @@ Try: PDFs • invoices • videos • reports • excel sheets
 # =========================================
 for message in st.session_state.messages:
 
-    # USER MESSAGE
     if message["role"] == "user":
 
         st.markdown(f"""
         <div class="chat-box">
-            <div class="user-msg">🔴 {message["content"]}</div>
+            <div class="user-msg">
+                🔴 {message["content"]}
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-    # ASSISTANT MESSAGE
     elif message["role"] == "assistant":
 
-        st.markdown("""
+        st.markdown(f"""
         <div class="chat-box">
-            <div class="bot-msg">🤖 I found these files:</div>
+            <div class="assistant-msg">
+                🤖 {message["content"]}
+            </div>
+        </div>
         """, unsafe_allow_html=True)
-
-        files = message.get("files", [])
-
-        for file in files:
-
-            icon = "📄"
-
-            filename = file.get("name", "Unknown File")
-            fileurl = file.get("url", "#")
-
-            if filename.lower().endswith(".mp4"):
-                icon = "🎥"
-
-            elif filename.lower().endswith(".xlsx"):
-                icon = "📊"
-
-            elif filename.lower().endswith(".png"):
-                icon = "🖼"
-
-            elif filename.lower().endswith(".pdf"):
-                icon = "📄"
-
-            st.markdown(
-                f"""
-                <div class="file-link">
-                    {icon}
-                    <a href="{fileurl}" target="_blank">
-                        {filename}
-                    </a>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        st.markdown("</div>", unsafe_allow_html=True)
 
 # =========================================
 # CHAT INPUT
@@ -230,30 +191,29 @@ query = st.chat_input("Ask about your files...")
 # =========================================
 if query:
 
-    # SAVE SEARCH HISTORY
     st.session_state.history.append(query)
 
-    # SAVE USER MESSAGE
+    # Save user msg
     st.session_state.messages.append({
         "role": "user",
         "content": query
     })
 
-    # SHOW USER MESSAGE
+    # Show user msg immediately
     st.markdown(f"""
     <div class="chat-box">
-        <div class="user-msg">🔴 {query}</div>
+        <div class="user-msg">
+            🔴 {query}
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # LOADING
     with st.spinner("Searching Google Drive..."):
 
         time.sleep(1)
 
         try:
 
-            # BACKEND URL
             API_URL = "https://google-drive-ai-agent-47b2.onrender.com/chat"
 
             response = requests.post(
@@ -262,86 +222,73 @@ if query:
                 timeout=60
             )
 
-            # CHECK RESPONSE
             if response.status_code != 200:
 
-                st.markdown(f"""
-                <div class="chat-box">
-                    ❌ Backend Error: {response.status_code}
-                </div>
-                """, unsafe_allow_html=True)
+                assistant_response = (
+                    f"❌ Backend Error: {response.status_code}"
+                )
 
             else:
 
                 data = response.json()
 
-                # RESPONSE TEXT
-                response_text = data.get("response", "")
+                # SAFE RESPONSE PARSING
+                assistant_response = ""
 
-                # FIXED
-                files = data.get("files", [])
+                if isinstance(data, dict):
 
-                # FILES FOUND
-                if files:
+                    if "response" in data:
+                        assistant_response = str(data["response"])
 
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "files": files
-                    })
+                    elif "result" in data:
+                        assistant_response = str(data["result"])
 
-                    st.markdown("""
-                    <div class="chat-box">
-                        <div class="bot-msg">🤖 I found these files:</div>
-                    """, unsafe_allow_html=True)
+                    elif "output" in data:
+                        assistant_response = str(data["output"])
 
-                    for file in files:
+                    elif "error" in data:
+                        assistant_response = f"❌ {data['error']}"
 
-                        icon = "📄"
+                    else:
+                        assistant_response = str(data)
 
-                        filename = file.get("name", "Unknown File")
-                        fileurl = file.get("url", "#")
-
-                        if filename.lower().endswith(".mp4"):
-                            icon = "🎥"
-
-                        elif filename.lower().endswith(".xlsx"):
-                            icon = "📊"
-
-                        elif filename.lower().endswith(".png"):
-                            icon = "🖼"
-
-                        elif filename.lower().endswith(".pdf"):
-                            icon = "📄"
-
-                        st.markdown(
-                            f"""
-                            <div class="file-link">
-                                {icon}
-                                <a href="{fileurl}" target="_blank">
-                                    {filename}
-                                </a>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-
-                    st.markdown("</div>", unsafe_allow_html=True)
-
-                # NO FILES FOUND
                 else:
+                    assistant_response = str(data)
 
-                    st.markdown(f"""
-                    <div class="chat-box">
-                        ❌ {response_text if response_text else "No matching files found."}
-                    </div>
-                    """, unsafe_allow_html=True)
+            # Save assistant response
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": assistant_response
+            })
+
+            # Display assistant response
+            st.markdown(f"""
+            <div class="chat-box">
+                <div class="assistant-msg">
+                    🤖 {assistant_response}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
         except Exception as e:
 
+            error_message = f"""
+            ⚠️ Unable to connect to backend server.
+
+            Error:
+            {str(e)}
+            """
+
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": error_message
+            })
+
             st.markdown(f"""
             <div class="chat-box">
-                ⚠️ Unable to connect to backend server.<br><br>
-                Error: {str(e)}
+                <div class="assistant-msg">
+                    {error_message}
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
