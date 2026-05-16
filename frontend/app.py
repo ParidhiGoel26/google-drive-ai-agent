@@ -203,6 +203,9 @@ for message in st.session_state.messages:
             elif filename.lower().endswith(".png"):
                 icon = "🖼"
 
+            elif filename.lower().endswith(".pdf"):
+                icon = "📄"
+
             st.markdown(
                 f"""
                 <div class="file-link">
@@ -250,7 +253,7 @@ if query:
 
         try:
 
-            # YOUR RENDER BACKEND URL
+            # BACKEND URL
             API_URL = "https://google-drive-ai-agent-47b2.onrender.com/chat"
 
             response = requests.post(
@@ -259,61 +262,79 @@ if query:
                 timeout=60
             )
 
-            data = response.json()
+            # CHECK RESPONSE
+            if response.status_code != 200:
 
-            response_text = data.get("response", "")
-
-            # IF FILES FOUND
-            if files:
-
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "files": files
-                })
-
-                st.markdown("""
+                st.markdown(f"""
                 <div class="chat-box">
-                    <div class="bot-msg">🤖 I found these files:</div>
-                """, unsafe_allow_html=True)
-
-                for file in files:
-
-                    icon = "📄"
-
-                    filename = file.get("name", "Unknown File")
-                    fileurl = file.get("url", "#")
-
-                    if filename.lower().endswith(".mp4"):
-                        icon = "🎥"
-
-                    elif filename.lower().endswith(".xlsx"):
-                        icon = "📊"
-
-                    elif filename.lower().endswith(".png"):
-                        icon = "🖼"
-
-                    st.markdown(
-                        f"""
-                        <div class="file-link">
-                            {icon}
-                            <a href="{fileurl}" target="_blank">
-                                {filename}
-                            </a>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-                st.markdown("</div>", unsafe_allow_html=True)
-
-            # NO FILES
-            else:
-
-                st.markdown("""
-                <div class="chat-box">
-                    ❌ No matching files found.
+                    ❌ Backend Error: {response.status_code}
                 </div>
                 """, unsafe_allow_html=True)
+
+            else:
+
+                data = response.json()
+
+                # RESPONSE TEXT
+                response_text = data.get("response", "")
+
+                # FIXED
+                files = data.get("files", [])
+
+                # FILES FOUND
+                if files:
+
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "files": files
+                    })
+
+                    st.markdown("""
+                    <div class="chat-box">
+                        <div class="bot-msg">🤖 I found these files:</div>
+                    """, unsafe_allow_html=True)
+
+                    for file in files:
+
+                        icon = "📄"
+
+                        filename = file.get("name", "Unknown File")
+                        fileurl = file.get("url", "#")
+
+                        if filename.lower().endswith(".mp4"):
+                            icon = "🎥"
+
+                        elif filename.lower().endswith(".xlsx"):
+                            icon = "📊"
+
+                        elif filename.lower().endswith(".png"):
+                            icon = "🖼"
+
+                        elif filename.lower().endswith(".pdf"):
+                            icon = "📄"
+
+                        st.markdown(
+                            f"""
+                            <div class="file-link">
+                                {icon}
+                                <a href="{fileurl}" target="_blank">
+                                    {filename}
+                                </a>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                    st.markdown("</div>", unsafe_allow_html=True)
+
+                # NO FILES FOUND
+                else:
+
+                    st.markdown(f"""
+                    <div class="chat-box">
+                        ❌ {response_text if response_text else "No matching files found."}
+                    </div>
+                    """, unsafe_allow_html=True)
 
         except Exception as e:
 
