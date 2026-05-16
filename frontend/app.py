@@ -2,9 +2,12 @@ import streamlit as st
 import requests
 import time
 
+API_URL = "https://google-drive-ai-agent-47b2.onrender.com/chat"
+
 # =========================
 # PAGE CONFIG
 # =========================
+
 st.set_page_config(
     page_title="Google Drive AI Agent",
     page_icon="📁",
@@ -14,30 +17,12 @@ st.set_page_config(
 # =========================
 # CUSTOM CSS
 # =========================
+
 st.markdown("""
 <style>
+
 .main {
     background-color: #0E1117;
-    color: white;
-}
-
-.stChatMessage {
-    border-radius: 12px;
-    padding: 10px;
-    font-size: 16px;
-}
-
-.stChatMessage a {
-    font-size: 18px !important;
-    word-break: break-word;
-}
-
-.stMarkdown {
-    font-size: 16px;
-}
-
-.stTextInput>div>div>input {
-    background-color: #262730;
     color: white;
 }
 
@@ -55,30 +40,37 @@ st.markdown("""
 .footer {
     text-align: center;
     color: gray;
-    margin-top: 50px;
+    margin-top: 40px;
     font-size: 14px;
 }
+
+.stChatMessage {
+    border-radius: 12px;
+    padding: 10px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
 # =========================
 # SIDEBAR
 # =========================
+
 with st.sidebar:
 
     st.title("Drive Assistant")
 
     st.markdown("---")
 
-    st.info("""
-### Supported searches:
+    st.markdown("### Supported searches:")
 
-• PDFs  
-• Images  
-• Videos  
-• Excel files  
-• Folders  
-• Reports  
+    st.markdown("""
+- 📄 PDFs
+- 🖼 Images
+- 🎥 Videos
+- 📊 Excel files
+- 📁 Folders
+- 📑 Reports
 """)
 
     st.markdown("---")
@@ -99,8 +91,9 @@ with st.sidebar:
         st.rerun()
 
 # =========================
-# TITLE
+# HEADER
 # =========================
+
 st.markdown(
     '<div class="big-title">📁 Google Drive AI Agent</div>',
     unsafe_allow_html=True
@@ -120,120 +113,121 @@ st.markdown("<br>", unsafe_allow_html=True)
 # =========================
 # SESSION STATE
 # =========================
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # =========================
-# DISPLAY CHAT HISTORY
+# DISPLAY OLD CHAT
 # =========================
-for msg in st.session_state.messages:
 
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+for message in st.session_state.messages:
+
+    with st.chat_message(message["role"]):
+
+        st.markdown(message["content"])
+
+        if "files" in message:
+
+            for file in message["files"]:
+
+                file_name = file.get("name", "Unknown File")
+
+                file_url = file.get(
+                    "webViewLink",
+                    file.get("url", "#")
+                )
+
+                st.markdown(
+                    f"- [{file_name}]({file_url})"
+                )
 
 # =========================
 # USER INPUT
 # =========================
-user_input = st.chat_input(
-    "Ask about your files..."
-)
 
-# =========================
-# CHAT LOGIC
-# =========================
-if user_input and user_input.strip():
+prompt = st.chat_input("Ask about your files...")
 
-    # Save search history
-    st.session_state.history.append(user_input)
+if prompt:
 
-    # Add user message
+    st.session_state.history.append(prompt)
+
     st.session_state.messages.append({
         "role": "user",
-        "content": user_input
+        "content": prompt
     })
 
     with st.chat_message("user"):
-        st.markdown(user_input)
+        st.markdown(prompt)
 
     # =========================
-    # BACKEND REQUEST
+    # ASSISTANT RESPONSE
     # =========================
 
-    BACKEND_URL = "https://google-drive-ai-agent-47b2.onrender.com/chat"
-
-    with st.spinner("🔍 Searching files..."):
-
-        try:
-
-            response = requests.post(
-                BACKEND_URL,
-                json={
-                    "message": user_input
-                },
-                timeout=60
-            )
-
-            data = response.json()
-
-            assistant_response = data.get(
-                "response",
-                "No response received from server."
-            )
-
-        except Exception:
-
-            assistant_response = (
-                "⚠️ Unable to connect to backend server. "
-                "Please try again later."
-            )
-
-    # Better no-results message
-    if assistant_response.strip().lower() in [
-        "no matching files found.",
-        "no files found."
-    ]:
-
-        assistant_response = (
-            "❌ No matching files found.\n\n"
-            "Try searching by:\n"
-            "- file type\n"
-            "- file name\n"
-            "- keywords\n"
-            "- reports\n"
-            "- videos\n"
-            "- PDFs"
-        )
-
-    # Save assistant response
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": assistant_response
-    })
-
-    # =========================
-    # TYPING ANIMATION
-    # =========================
     with st.chat_message("assistant"):
 
-        message_placeholder = st.empty()
+        with st.spinner("🔍 Searching Google Drive..."):
 
-        full_response = ""
+            try:
 
-        for chunk in assistant_response.split():
+                response = requests.post(
+                    API_URL,
+                    json={"message": prompt},
+                    timeout=60
+                )
 
-            full_response += chunk + " "
+                data = response.json()
 
-            message_placeholder.markdown(
-                full_response + "▌"
-            )
+                files = data.get("files", [])
 
-            time.sleep(0.02)
+                if files:
 
-        message_placeholder.markdown(full_response)
+                    st.success(f"Found {len(files)} file(s).")
+
+                    for file in files:
+
+                        file_name = file.get(
+                            "name",
+                            "Unknown File"
+                        )
+
+                        file_url = file.get(
+                            "webViewLink",
+                            file.get("url", "#")
+                        )
+
+                        st.markdown(
+                            f"- [{file_name}]({file_url})"
+                        )
+
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": f"Found {len(files)} file(s).",
+                        "files": files
+                    })
+
+                else:
+
+                    st.warning("No matching files found.")
+
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": "No matching files found."
+                    })
+
+            except Exception as e:
+
+                st.error(f"Error: {str(e)}")
+
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": str(e)
+                })
 
 # =========================
 # FOOTER
 # =========================
+
 st.markdown("---")
 
 st.markdown(
