@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-API_URL = "https://your-backend-url.onrender.com/chat"
+API_URL = "https://google-drive-ai-agent-47b2.onrender.com"
 
 st.set_page_config(
     page_title="Google Drive AI Agent",
