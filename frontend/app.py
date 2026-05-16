@@ -251,17 +251,17 @@ if query:
         try:
 
             # YOUR RENDER BACKEND URL
-            API_URL = "https://google-drive-ai-agent-47b2.onrender.com/search"
+            API_URL = "https://google-drive-ai-agent-47b2.onrender.com/chat"
 
             response = requests.post(
                 API_URL,
-                json={"query": query},
+                json={"message": query},
                 timeout=60
             )
 
             data = response.json()
 
-            files = data.get("files", [])
+            response_text = data.get("response", "")
 
             # IF FILES FOUND
             if files:
